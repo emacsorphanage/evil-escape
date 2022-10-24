@@ -1,4 +1,4 @@
-;;; evil-escape.el --- Escape from anything with a customizable key sequence
+;;; evil-escape.el --- Escape from anything with a customizable key sequence -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2014-2015 syl20bnr
 ;;
@@ -180,13 +180,21 @@ with a key sequence."
   "evil-escape pre-command hook."
   (with-demoted-errors "evil-escape: Error %S"
       (when (evil-escape-p)
-        (let* ((modified (buffer-modified-p))
+        (let* (;; NOTE Add syl20bnr/evil-escape#91: inhibit redisplay and
+               ;;      refontification after a `read-event'.
+               (inhibit-redisplay nil)
+               (fontification-functions nil)
+
+               (modified (buffer-modified-p))
                (inserted (evil-escape--insert))
                (fkey (elt evil-escape-key-sequence 0))
                (skey (elt evil-escape-key-sequence 1))
                (evt (read-event nil nil evil-escape-delay)))
           (when inserted (evil-escape--delete))
-          (set-buffer-modified-p modified)
+          ;; NOTE Add syl20bnr/evil-escape#91: replace `set-buffer-modified-p'
+          ;;      with `restore-buffer-modified-p', which doesn't redisplay the
+          ;;      modeline after changing the buffer's modified state.
+          (restore-buffer-modified-p modified)
           (cond
            ((and (characterp evt)
                  (or (and (equal (this-command-keys) (evil-escape--first-key))
@@ -200,8 +208,12 @@ with a key sequence."
                 (setq this-command esc-fun)
                 (setq this-original-command esc-fun))))
            ((null evt))
-           (t (setq unread-command-events
-                    (append unread-command-events (list evt)))))))))
+           ;; NOTE Add syl20bnr/evil-escape#93: replace with
+           ;;      `unread-command-events' with
+           ;;      `unread-post-input-method-events' so evil-escape doesn't
+           ;;      interfere with macro recording.
+           ((setq unread-post-input-method-events
+                  (append unread-post-input-method-events (list evt)))))))))
 
 (defadvice evil-repeat (around evil-escape-repeat-info activate)
   (let ((evil-escape-inhibit t))
