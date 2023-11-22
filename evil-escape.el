@@ -246,6 +246,7 @@ If any of these functions return non nil, evil escape will be inhibited."
    ((evil-escape--is-magit-buffer) 'evil-escape--escape-with-q)
    ((bound-and-true-p isearch-mode) 'isearch-abort)
    ((window-minibuffer-p) 'abort-recursive-edit)
+   ((eq 'treemacs-mode major-mode) 'treemacs-quit)
    (t (lookup-key evil-normal-state-map [escape]))))
 
 (defun evil-escape--escape-motion-state ()
@@ -263,7 +264,6 @@ If any of these functions return non nil, evil escape will be inhibited."
          (string-equal "*helm-ag-edit*" (buffer-name)))
     'helm-ag--edit-abort)
    ((eq 'neotree-mode major-mode) 'neotree-hide)
-   ((eq 'treemacs-mode major-mode) 'treemacs-quit)
    (t 'evil-normal-state)))
 
 (defun evil-escape--escape-emacs-state ()
